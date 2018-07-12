@@ -84,8 +84,9 @@ def mirror(args):
     log("--> install bugfix in GNU ELPA build script")
     subprocess.run(
         ["git", "checkout", "admin/archive-contents.el"], cwd=GNU_ELPA_SUBDIR)
-    with fileinput.FileInput(GNU_ELPA_SUBDIR / "admin" / "archive-contents.el",
-                             inplace=True) as f:
+    with fileinput.FileInput(
+            files=(GNU_ELPA_SUBDIR / "admin" / "archive-contents.el"),
+            inplace=True) as f:
         for line in f:
             line = line.replace(
                 '(cons file-pattern "")',
