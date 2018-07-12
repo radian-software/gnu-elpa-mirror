@@ -98,7 +98,7 @@ def mirror(args):
     for repo in api.get_user("emacs-straight").get_repos():
         existing_repos.append(repo.name)
     packages = []
-    for subdir in GNU_ELPA_PACKAGES_SUBDIR.iterdir():
+    for subdir in sorted(GNU_ELPA_PACKAGES_SUBDIR.iterdir()):
         if not subdir.is_dir():
             continue
         packages.append(subdir.name)
@@ -131,7 +131,7 @@ def mirror(args):
         log("----> update package {}".format(package))
         package_dir = GNU_ELPA_PACKAGES_SUBDIR / package
         repo_dir = REPOS_SUBDIR / package
-        for entry in repo_dir.iterdir():
+        for entry in sorted(repo_dir.iterdir()):
             if entry.name == ".git":
                 continue
             if entry.is_dir() and not entry.is_symlink():
@@ -141,7 +141,7 @@ def mirror(args):
                     entry.unlink()
                 except FileNotFoundError:
                     pass
-        for source in package_dir.iterdir():
+        for source in sorted(package_dir.iterdir()):
             if source.name == ".git":
                 continue
             target = repo_dir / source.name
