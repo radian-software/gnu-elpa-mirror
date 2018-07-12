@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import datetime
-import fileinput
 import github
 import os
 import pathlib
@@ -84,14 +83,14 @@ def mirror(args):
     log("--> install bugfix in GNU ELPA build script")
     subprocess.run(
         ["git", "checkout", "admin/archive-contents.el"], cwd=GNU_ELPA_SUBDIR)
-    with fileinput.FileInput(
-            files=(GNU_ELPA_SUBDIR / "admin" / "archive-contents.el"),
-            inplace=True) as f:
-        for line in f:
-            line = line.replace(
-                '(cons file-pattern "")',
-                '(cons file-pattern (file-name-nondirectory file-pattern))')
-            print(line, end="")
+    with open(GNU_ELPA_SUBDIR / "admin" / "archive-contents.el", "r+") as f:
+        contents = f.read()
+        contents = contents.replace(
+            '(cons file-pattern "")',
+            '(cons file-pattern (file-name-nondirectory file-pattern))')
+        f.seek(0)
+        f.truncate()
+        f.write(contents)
     log("--> retrieve/update GNU ELPA external packages")
     subprocess.run(["make", "externals"], cwd=GNU_ELPA_SUBDIR, check=True)
     log("--> get list of mirror repositories")
