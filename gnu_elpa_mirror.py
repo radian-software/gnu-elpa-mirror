@@ -142,6 +142,8 @@ def mirror(args):
                 except FileNotFoundError:
                     pass
         for source in package_dir.iterdir():
+            if source.name == ".git":
+                continue
             target = repo_dir / source.name
             if source.is_dir() and not source.is_symlink():
                 shutil.copytree(source, target)
@@ -153,7 +155,10 @@ def mirror(args):
                 ["git", "diff", "--cached", "--quiet"],
                 cwd=repo_dir).returncode != 0)
         if anything_staged:
-            subprocess.run(["git", "commit", "-m",
+            subprocess.run(["git",
+                            "-c", "user.name=GNU ELPA Mirror Bot",
+                            "-c", "user.email=emacs-devel@gnu.org",
+                            "commit", "-m",
                             ("Update {}\n\nTimestamp: {}\n"
                              "GNU ELPA commit: {}\nEmacs commit: {}")
                             .format(package, timestamp,
@@ -165,7 +170,8 @@ def mirror(args):
     for package in packages:
         log("----> push changes to package {}".format(package))
         repo_dir = REPOS_SUBDIR / package
-        subprocess.run(["git", "push"], cwd=repo_dir, check=True)
+        subprocess.run(["git", "push", "origin", "master"],
+                       cwd=repo_dir, check=True)
 
 if __name__ == "__main__":
     mirror(sys.argv[1:])
