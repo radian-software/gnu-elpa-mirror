@@ -51,6 +51,42 @@ def clone_git_repo(git_url, repo_dir, shallow, all_branches, private_url):
             subprocess.run(["git", "reset", "--hard", ref],
                            cwd=repo_dir, check=True)
 
+def delete_contents(path):
+    for entry in sorted(path.iterdir()):
+        if entry.name == ".git":
+            continue
+        if entry.is_dir() and not entry.is_symlink():
+            shutil.rmtree(entry)
+        else:
+            try:
+                entry.unlink()
+            except FileNotFoundError:
+                pass
+
+def stage_and_commit(repo_dir, message, data):
+    subprocess.run(["git", "add", "--all"], cwd=repo_dir, check=True)
+    anything_staged = (
+        subprocess.run(
+            ["git", "diff", "--cached", "--quiet"],
+            cwd=repo_dir).returncode != 0)
+    if anything_staged:
+        subprocess.run(
+            ["git",
+             "-c", "user.name=GNU ELPA Mirror Bot",
+             "-c", "user.email=emacs-devel@gnu.org",
+             "commit", "-m",
+             ("{}\n\n"
+              "Timestamp: {}\n"
+              "GNU ELPA commit: {}\n"
+              "Emacs commit: {}")
+             .format(message,
+                     data["timestamp"],
+                     data["gnu_elpa_commit"],
+                     data["emacs_commit"])],
+            cwd=repo_dir, check=True)
+    else:
+        log("(no changes)")
+
 # https://savannah.gnu.org/git/?group=emacs
 GNU_ELPA_GIT_URL = "https://git.savannah.gnu.org/git/emacs/elpa.git"
 EMACS_GIT_URL = "https://git.savannah.gnu.org/git/emacs.git"
@@ -80,6 +116,11 @@ def mirror(args):
         ["git", "rev-parse", "HEAD"],
         cwd=EMACS_SUBDIR, stdout=subprocess.PIPE,
         check=True).stdout.decode().strip()
+    commit_data = {
+        "timestamp": timestamp,
+        "gnu_elpa_commit": gnu_elpa_commit,
+        "emacs_commit": emacs_commit,
+    }
     log("--> install bugfix in GNU ELPA build script")
     subprocess.run(
         ["git", "checkout", "admin/archive-contents.el"], cwd=GNU_ELPA_SUBDIR)
@@ -100,6 +141,9 @@ def mirror(args):
     packages = []
     for subdir in sorted(GNU_ELPA_PACKAGES_SUBDIR.iterdir()):
         if not subdir.is_dir():
+            continue
+        # Prevent monkey business.
+        if subdir.name == "gnu-elpa-mirror":
             continue
         packages.append(subdir.name)
     log("--> clone/update mirror repositories")
@@ -131,16 +175,7 @@ def mirror(args):
         log("----> update package {}".format(package))
         package_dir = GNU_ELPA_PACKAGES_SUBDIR / package
         repo_dir = REPOS_SUBDIR / package
-        for entry in sorted(repo_dir.iterdir()):
-            if entry.name == ".git":
-                continue
-            if entry.is_dir() and not entry.is_symlink():
-                shutil.rmtree(entry)
-            else:
-                try:
-                    entry.unlink()
-                except FileNotFoundError:
-                    pass
+        delete_contents(repo_dir)
         for source in sorted(package_dir.iterdir()):
             if source.name == ".git":
                 continue
@@ -149,29 +184,39 @@ def mirror(args):
                 shutil.copytree(source, target)
             else:
                 shutil.copyfile(source, target)
-        subprocess.run(["git", "add", "--all"], cwd=repo_dir, check=True)
-        anything_staged = (
-            subprocess.run(
-                ["git", "diff", "--cached", "--quiet"],
-                cwd=repo_dir).returncode != 0)
-        if anything_staged:
-            subprocess.run(["git",
-                            "-c", "user.name=GNU ELPA Mirror Bot",
-                            "-c", "user.email=emacs-devel@gnu.org",
-                            "commit", "-m",
-                            ("Update {}\n\nTimestamp: {}\n"
-                             "GNU ELPA commit: {}\nEmacs commit: {}")
-                            .format(package, timestamp,
-                                    gnu_elpa_commit, emacs_commit)],
+        stage_and_commit(repo_dir, "Update " + package, commit_data)
+    if "--skip-mirror-pushes" not in args:
+        log("--> push changes to mirrored packages")
+        for package in packages:
+            log("----> push changes to package {}".format(package))
+            repo_dir = REPOS_SUBDIR / package
+            subprocess.run(["git", "push", "origin", "master"],
                            cwd=repo_dir, check=True)
-        else:
-            log("(no changes)")
-    log("--> push changes")
+    git_url = ("https://raxod502:{}@github.com/emacs-straight/{}.git"
+               .format(ACCESS_TOKEN, "gnu-elpa-mirror"))
+    repo_dir = REPOS_SUBDIR / "gnu-elpa-mirror"
+    if "gnu-elpa-mirror" not in existing_repos:
+        log("--> create mirror list repository")
+        org.create_repo(
+            "gnu-elpa-mirror",
+            description="List packages mirrored from GNU ELPA",
+            homepage="https://elpa.gnu.org/packages/",
+            has_issues=False,
+            has_wiki=False,
+            has_projects=False,
+            auto_init=False)
+    log("--> clone/update mirror list repository")
+    clone_git_repo(git_url, repo_dir,
+                   shallow=True, all_branches=False, private_url=True)
+    print("--> update mirror list repository")
+    delete_contents(repo_dir)
     for package in packages:
-        log("----> push changes to package {}".format(package))
-        repo_dir = REPOS_SUBDIR / package
-        subprocess.run(["git", "push", "origin", "master"],
-                       cwd=repo_dir, check=True)
+        with open(repo_dir / package, "w"):
+            pass
+    stage_and_commit(repo_dir, "Update mirror list", commit_data)
+    log("--> push changes to mirror list repository")
+    subprocess.run(["git", "push", "origin", "master"],
+                   cwd=repo_dir, check=True)
 
 if __name__ == "__main__":
     mirror(sys.argv[1:])
