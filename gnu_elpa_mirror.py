@@ -208,7 +208,7 @@ def mirror(args):
     log("--> clone/update mirror list repository")
     clone_git_repo(git_url, repo_dir,
                    shallow=True, all_branches=False, private_url=True)
-    print("--> update mirror list repository")
+    log("--> update mirror list repository")
     delete_contents(repo_dir)
     for package in packages:
         with open(repo_dir / package, "w"):
