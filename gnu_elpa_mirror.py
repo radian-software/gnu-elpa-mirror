@@ -64,7 +64,13 @@ def delete_contents(path):
                 pass
 
 def stage_and_commit(repo_dir, message, data):
-    subprocess.run(["git", "add", "--all"], cwd=repo_dir, check=True)
+    # Note the use of --force because some packages like AUCTeX need
+    # files to be checked into version control that are nevertheless
+    # in their .gitignore. See [1].
+    #
+    # [1]: https://github.com/raxod502/straight.el/issues/299
+    subprocess.run(
+        ["git", "add", "--all", "--force"], cwd=repo_dir, check=True)
     anything_staged = (
         subprocess.run(
             ["git", "diff", "--cached", "--quiet"],
