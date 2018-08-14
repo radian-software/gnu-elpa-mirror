@@ -40,8 +40,8 @@ This is also documented in the `straight.el` documentation.
 * Create a Heroku app named `gnu-elpa-mirror`.
 * Add the following buildpacks:
 
+      heroku/apt
       heroku/python
-      https://github.com/raxod502/heroku-buildpack-emacs
 
 * Set the `ACCESS_TOKEN` config var to a GitHub personal access token
   with the `public_repo` permission.
