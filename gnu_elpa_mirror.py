@@ -111,11 +111,11 @@ def mirror(args):
     log("--> clone/update GNU ELPA")
     clone_git_repo(
         GNU_ELPA_GIT_URL, GNU_ELPA_SUBDIR,
-        shallow=True, all_branches=True, private_url=False)
+        shallow=False, all_branches=True, private_url=False)
     log("--> clone/update Emacs")
     clone_git_repo(
         EMACS_GIT_URL, EMACS_SUBDIR,
-        shallow=True, all_branches=False, private_url=False)
+        shallow=False, all_branches=False, private_url=False)
     log("--> check timestamp and commit hashes")
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     gnu_elpa_commit = subprocess.run(
