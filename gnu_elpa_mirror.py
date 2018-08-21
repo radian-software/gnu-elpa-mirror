@@ -4,15 +4,11 @@ import datetime
 import github
 import os
 import pathlib
-import shlex
 import shutil
 import subprocess
 import sys
 
 os.chdir(os.path.dirname(__file__))
-
-EMACS = os.getenv("EMACS", "emacs")
-ELPA_EMACS = "{} --batch".format(shlex.quote(EMACS))
 
 def log(message):
     print(message, file=sys.stderr)
@@ -143,10 +139,7 @@ def mirror(args):
         f.truncate()
         f.write(contents)
     log("--> retrieve/update GNU ELPA external packages")
-    env = os.environ.copy()
-    env["EMACS"] = ELPA_EMACS
-    subprocess.run(
-        ["make", "externals"], cwd=GNU_ELPA_SUBDIR, env=env, check=True)
+    subprocess.run(["make", "externals"], cwd=GNU_ELPA_SUBDIR, check=True)
     log("--> get list of mirror repositories")
     existing_repos = []
     for repo in api.get_user("emacs-straight").get_repos():
