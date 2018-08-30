@@ -10,6 +10,12 @@ import sys
 
 os.chdir(os.path.dirname(__file__))
 
+def remove_prefix(prefix, string):
+    if string.startswith(prefix):
+        return string[len(prefix):]
+    else:
+        return string
+
 def log(message):
     print(message, file=sys.stderr)
 
@@ -40,10 +46,11 @@ def clone_git_repo(git_url, repo_dir, shallow, all_branches, private_url):
         result = subprocess.run(
             ["git", "symbolic-ref", "HEAD"],
             cwd=repo_dir, check=True, stdout=subprocess.PIPE)
-        branch = result.stdout.decode().strip()
+        branch = remove_prefix("refs/heads/", result.stdout.decode().strip())
         ref = "refs/remotes/origin/{}".format(branch)
         subprocess.run(["git", "fetch"], cwd=repo_dir, check=True)
-        result = subprocess.run(["git", "show-ref", ref], cwd=repo_dir)
+        result = subprocess.run(["git", "show-ref", ref], cwd=repo_dir,
+                                stdout=subprocess.DEVNULL)
         # Check if there is a master branch to merge from upstream.
         # Also, avoid creating merges or rebases due to a diverging
         # history.
