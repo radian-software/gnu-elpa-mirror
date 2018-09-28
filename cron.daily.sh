@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python3 -m gnu_elpa_mirror
+python3 -u -m gnu_elpa_mirror
