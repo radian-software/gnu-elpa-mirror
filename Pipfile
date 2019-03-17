@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 pygithub = "*"
+requests = {extras = ["security"],version = "*"}
 
 [dev-packages]
 

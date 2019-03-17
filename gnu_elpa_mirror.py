@@ -4,6 +4,7 @@ import datetime
 import github
 import os
 import pathlib
+import requests
 import shutil
 import subprocess
 import sys
@@ -230,6 +231,10 @@ def mirror(args):
     log("--> push changes to mirror list repository")
     subprocess.run(["git", "push", "origin", "master"],
                    cwd=repo_dir, check=True)
+    if os.environ.get("GEM_SNITCH"):
+        log("--> update Dead Man's Snitch")
+        resp = requests.get("https://nosnch.in/6c16713f1f")
+        log(resp)
 
 if __name__ == "__main__":
     mirror(sys.argv[1:])
