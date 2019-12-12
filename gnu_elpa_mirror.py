@@ -13,23 +13,28 @@ import sys
 
 os.chdir(os.path.dirname(__file__))
 
+
 def remove_prefix(prefix, string):
     if string.startswith(prefix):
-        return string[len(prefix):]
+        return string[len(prefix) :]
     else:
         return string
 
+
 def log(message):
     print(message, file=sys.stderr)
+
 
 def die(message):
     log("gnu_elpa_mirror: " + message)
     sys.exit(1)
 
+
 try:
     ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
 except KeyError:
     die("please export ACCESS_TOKEN to a valid GitHub API token")
+
 
 def clone_git_repo(git_url, repo_dir, shallow, all_branches, private_url):
     if not repo_dir.is_dir():
@@ -48,18 +53,22 @@ def clone_git_repo(git_url, repo_dir, shallow, all_branches, private_url):
     else:
         result = subprocess.run(
             ["git", "symbolic-ref", "HEAD"],
-            cwd=repo_dir, check=True, stdout=subprocess.PIPE)
+            cwd=repo_dir,
+            check=True,
+            stdout=subprocess.PIPE,
+        )
         branch = remove_prefix("refs/heads/", result.stdout.decode().strip())
         ref = "refs/remotes/origin/{}".format(branch)
         subprocess.run(["git", "fetch"], cwd=repo_dir, check=True)
-        result = subprocess.run(["git", "show-ref", ref], cwd=repo_dir,
-                                stdout=subprocess.DEVNULL)
+        result = subprocess.run(
+            ["git", "show-ref", ref], cwd=repo_dir, stdout=subprocess.DEVNULL
+        )
         # Check if there is a master branch to merge from upstream.
         # Also, avoid creating merges or rebases due to a diverging
         # history.
         if result.returncode == 0:
-            subprocess.run(["git", "reset", "--hard", ref],
-                           cwd=repo_dir, check=True)
+            subprocess.run(["git", "reset", "--hard", ref], cwd=repo_dir, check=True)
+
 
 def delete_contents(path):
     for entry in sorted(path.iterdir()):
@@ -73,28 +82,36 @@ def delete_contents(path):
             except FileNotFoundError:
                 pass
 
+
 def stage_and_commit(repo_dir, message):
     # Note the use of --force because some packages like AUCTeX need
     # files to be checked into version control that are nevertheless
     # in their .gitignore. See [1].
     #
     # [1]: https://github.com/raxod502/straight.el/issues/299
-    subprocess.run(
-        ["git", "add", "--all", "--force"], cwd=repo_dir, check=True)
+    subprocess.run(["git", "add", "--all", "--force"], cwd=repo_dir, check=True)
     anything_staged = (
-        subprocess.run(
-            ["git", "diff", "--cached", "--quiet"],
-            cwd=repo_dir).returncode != 0)
+        subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=repo_dir).returncode
+        != 0
+    )
     if anything_staged:
         subprocess.run(
-            ["git",
-             "-c", "user.name=GNU ELPA Mirror Bot",
-             "-c", "user.email=emacs-devel@gnu.org",
-             "commit", "-m",
-             message],
-            cwd=repo_dir, check=True)
+            [
+                "git",
+                "-c",
+                "user.name=GNU ELPA Mirror Bot",
+                "-c",
+                "user.email=emacs-devel@gnu.org",
+                "commit",
+                "-m",
+                message,
+            ],
+            cwd=repo_dir,
+            check=True,
+        )
     else:
         log("(no changes)")
+
 
 # https://savannah.gnu.org/git/?group=emacs
 GNU_ELPA_GIT_URL = "https://git.savannah.gnu.org/git/emacs/elpa.git"
@@ -105,35 +122,57 @@ GNU_ELPA_PACKAGES_SUBDIR = GNU_ELPA_SUBDIR / "packages"
 EMACS_SUBDIR = GNU_ELPA_SUBDIR / "emacs"
 REPOS_SUBDIR = pathlib.Path("repos")
 
+
 def make_commit_message(message, data):
-    return ("{}\n\n"
-            "Timestamp: {}\n"
-            "GNU ELPA commit: {}\n"
-            "Emacs commit: {}"
-            .format(message,
-                    data["timestamp"],
-                    data["gnu_elpa_commit"],
-                    data["emacs_commit"]))
+    return (
+        "{}\n\n"
+        "Timestamp: {}\n"
+        "GNU ELPA commit: {}\n"
+        "Emacs commit: {}".format(
+            message, data["timestamp"], data["gnu_elpa_commit"], data["emacs_commit"]
+        )
+    )
+
 
 def mirror_gnu_elpa(args, api, existing_repos):
     log("--> clone/update GNU ELPA")
     clone_git_repo(
-        GNU_ELPA_GIT_URL, GNU_ELPA_SUBDIR,
-        shallow=False, all_branches=True, private_url=False)
+        GNU_ELPA_GIT_URL,
+        GNU_ELPA_SUBDIR,
+        shallow=False,
+        all_branches=True,
+        private_url=False,
+    )
     log("--> clone/update Emacs")
     clone_git_repo(
-        EMACS_GIT_URL, EMACS_SUBDIR,
-        shallow=False, all_branches=False, private_url=False)
+        EMACS_GIT_URL,
+        EMACS_SUBDIR,
+        shallow=False,
+        all_branches=False,
+        private_url=False,
+    )
     log("--> check timestamp and commit hashes")
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    gnu_elpa_commit = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=GNU_ELPA_SUBDIR, stdout=subprocess.PIPE,
-        check=True).stdout.decode().strip()
-    emacs_commit = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=EMACS_SUBDIR, stdout=subprocess.PIPE,
-        check=True).stdout.decode().strip()
+    gnu_elpa_commit = (
+        subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=GNU_ELPA_SUBDIR,
+            stdout=subprocess.PIPE,
+            check=True,
+        )
+        .stdout.decode()
+        .strip()
+    )
+    emacs_commit = (
+        subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=EMACS_SUBDIR,
+            stdout=subprocess.PIPE,
+            check=True,
+        )
+        .stdout.decode()
+        .strip()
+    )
     commit_data = {
         "timestamp": timestamp,
         "gnu_elpa_commit": gnu_elpa_commit,
@@ -141,12 +180,14 @@ def mirror_gnu_elpa(args, api, existing_repos):
     }
     log("--> install bugfix in GNU ELPA build script")
     subprocess.run(
-        ["git", "checkout", "admin/archive-contents.el"], cwd=GNU_ELPA_SUBDIR)
+        ["git", "checkout", "admin/archive-contents.el"], cwd=GNU_ELPA_SUBDIR
+    )
     with open(GNU_ELPA_SUBDIR / "admin" / "archive-contents.el", "r+") as f:
         contents = f.read()
         contents = contents.replace(
             '(cons file-pattern "")',
-            '(cons file-pattern (file-name-nondirectory file-pattern))')
+            "(cons file-pattern (file-name-nondirectory file-pattern))",
+        )
         f.seek(0)
         f.truncate()
         f.write(contents)
@@ -164,26 +205,27 @@ def mirror_gnu_elpa(args, api, existing_repos):
     org = api.get_organization("emacs-straight")
     REPOS_SUBDIR.mkdir(exist_ok=True)
     for package in packages:
-        git_url = ("https://raxod502:{}@github.com/emacs-straight/{}.git"
-                   .format(ACCESS_TOKEN, package))
+        git_url = "https://raxod502:{}@github.com/emacs-straight/{}.git".format(
+            ACCESS_TOKEN, package
+        )
         repo_dir = REPOS_SUBDIR / package
         if package not in existing_repos:
             log("----> create mirror repository {}".format(package))
             org.create_repo(
                 package,
-                description=("Mirror of the {} package from GNU ELPA"
-                             .format(package)),
-                homepage=("https://elpa.gnu.org/packages/{}.html"
-                          .format(package)),
+                description=("Mirror of the {} package from GNU ELPA".format(package)),
+                homepage=("https://elpa.gnu.org/packages/{}.html".format(package)),
                 has_issues=False,
                 has_wiki=False,
                 has_projects=False,
-                auto_init=False)
+                auto_init=False,
+            )
         if args.skip_mirror_pulls and repo_dir.is_dir():
             continue
         log("----> clone/update mirror repository {}".format(package))
-        clone_git_repo(git_url, repo_dir,
-                       shallow=True, all_branches=False, private_url=True)
+        clone_git_repo(
+            git_url, repo_dir, shallow=True, all_branches=False, private_url=True
+        )
     log("--> update mirrored packages")
     for package in packages:
         log("----> update package {}".format(package))
@@ -206,10 +248,12 @@ def mirror_gnu_elpa(args, api, existing_repos):
         for package in packages:
             log("----> push changes to package {}".format(package))
             repo_dir = REPOS_SUBDIR / package
-            subprocess.run(["git", "push", "origin", "master"],
-                           cwd=repo_dir, check=True)
-    git_url = ("https://raxod502:{}@github.com/emacs-straight/{}.git"
-               .format(ACCESS_TOKEN, "gnu-elpa-mirror"))
+            subprocess.run(
+                ["git", "push", "origin", "master"], cwd=repo_dir, check=True
+            )
+    git_url = "https://raxod502:{}@github.com/emacs-straight/{}.git".format(
+        ACCESS_TOKEN, "gnu-elpa-mirror"
+    )
     repo_dir = REPOS_SUBDIR / "gnu-elpa-mirror"
     if "gnu-elpa-mirror" not in existing_repos:
         log("--> create mirror list repository")
@@ -220,34 +264,34 @@ def mirror_gnu_elpa(args, api, existing_repos):
             has_issues=False,
             has_wiki=False,
             has_projects=False,
-            auto_init=False)
+            auto_init=False,
+        )
     log("--> clone/update mirror list repository")
-    clone_git_repo(git_url, repo_dir,
-                   shallow=True, all_branches=False, private_url=True)
+    clone_git_repo(
+        git_url, repo_dir, shallow=True, all_branches=False, private_url=True
+    )
     log("--> update mirror list repository")
     delete_contents(repo_dir)
     for package in packages:
         with open(repo_dir / package, "w"):
             pass
-    stage_and_commit(
-        repo_dir, make_commit_message("Update mirror list", commit_data)
-    )
+    stage_and_commit(repo_dir, make_commit_message("Update mirror list", commit_data))
     log("--> push changes to mirror list repository")
-    subprocess.run(["git", "push", "origin", "master"],
-                   cwd=repo_dir, check=True)
+    subprocess.run(["git", "push", "origin", "master"], cwd=repo_dir, check=True)
+
 
 def mirror_emacsmirror(args, api, existing_repos):
     org = api.get_organization("emacs-straight")
     epkgs_dir = REPOS_SUBDIR / "epkgs"
     epkgs_git_url = "https://github.com/emacsmirror/epkgs.git"
     epkgs_mirror_dir = REPOS_SUBDIR / "emacsmirror-mirror"
-    epkgs_mirror_git_url = (
-        "https://raxod502:{}@github.com/emacs-straight/emacsmirror-mirror.git"
-        .format(ACCESS_TOKEN)
+    epkgs_mirror_git_url = "https://raxod502:{}@github.com/emacs-straight/emacsmirror-mirror.git".format(
+        ACCESS_TOKEN
     )
     log("--> clone/update Emacsmirror")
-    clone_git_repo(epkgs_git_url, epkgs_dir,
-                   shallow=True, all_branches=False, private_url=False)
+    clone_git_repo(
+        epkgs_git_url, epkgs_dir, shallow=True, all_branches=False, private_url=False
+    )
     if "emacsmirror-mirror" not in existing_repos:
         log("--> create Emacsmirror mirror repository")
         org.create_repo(
@@ -257,10 +301,16 @@ def mirror_emacsmirror(args, api, existing_repos):
             has_issues=False,
             has_wiki=False,
             has_projects=False,
-            auto_init=False)
+            auto_init=False,
+        )
     log("--> clone/update Emacsmirror mirror repository")
-    clone_git_repo(epkgs_mirror_git_url, epkgs_mirror_dir,
-                   shallow=True, all_branches=False, private_url=True)
+    clone_git_repo(
+        epkgs_mirror_git_url,
+        epkgs_mirror_dir,
+        shallow=True,
+        all_branches=False,
+        private_url=True,
+    )
     log("--> update Emacsmirror mirror")
     delete_contents(epkgs_mirror_dir)
     attic_file = epkgs_mirror_dir / "attic"
@@ -272,10 +322,10 @@ def mirror_emacsmirror(args, api, existing_repos):
             for line in gitmodules:
                 m = re.fullmatch(
                     r'\[submodule "[^"]+"\]\n|'
-                    r'\tpath = (?:attic|mirror)/.+\n|'
-                    r'\turl = git@github.com:([^/]+)/([^.]+)\.git\n|'
-                    r'\tbranch = .+\n',
-                    line
+                    r"\tpath = (?:attic|mirror)/.+\n|"
+                    r"\turl = git@github.com:([^/]+)/([^.]+)\.git\n|"
+                    r"\tbranch = .+\n",
+                    line,
                 )
                 assert m, line
                 org = m.group(1)
@@ -298,18 +348,26 @@ def mirror_emacsmirror(args, api, existing_repos):
                     assert False, org
     assert num_attic >= 500 and num_mirror >= 1000
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    epkgs_commit = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=epkgs_dir, stdout=subprocess.PIPE,
-        check=True).stdout.decode().strip()
+    epkgs_commit = (
+        subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=epkgs_dir,
+            stdout=subprocess.PIPE,
+            check=True,
+        )
+        .stdout.decode()
+        .strip()
+    )
     stage_and_commit(
         epkgs_mirror_dir,
-        "Update Emacsmirror mirror\n\nTimestamp: {}\nEmacsmirror commit: {}"
-        .format(timestamp, epkgs_commit)
+        "Update Emacsmirror mirror\n\nTimestamp: {}\nEmacsmirror commit: {}".format(
+            timestamp, epkgs_commit
+        ),
     )
     log("--> push changes to Emacsmirror mirror repository")
-    subprocess.run(["git", "push", "origin", "master"],
-                   cwd=epkgs_mirror_dir, check=True)
+    subprocess.run(
+        ["git", "push", "origin", "master"], cwd=epkgs_mirror_dir, check=True
+    )
 
 
 def mirror():
@@ -332,6 +390,7 @@ def mirror():
         log("--> update Dead Man's Snitch")
         resp = requests.get("https://nosnch.in/6c16713f1f")
         log(resp)
+
 
 if __name__ == "__main__":
     mirror()
