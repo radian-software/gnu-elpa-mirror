@@ -36,13 +36,17 @@ except KeyError:
     die("please export ACCESS_TOKEN to a valid GitHub API token")
 
 
-def clone_git_repo(git_url, repo_dir, shallow, all_branches, private_url):
+def clone_git_repo(git_url, repo_dir, shallow, all_branches, private_url, mirror=False):
     if not repo_dir.is_dir():
         cmd = ["git", "clone"]
         if shallow:
             cmd.extend(["--depth", "1"])
             if all_branches:
                 cmd.append("--no-single-branch")
+        if mirror:
+            # Use --bare instead of --mirror, see
+            # <https://stackoverflow.com/a/54413257/3538165>.
+            cmd.append("--bare")
         cmd.extend([git_url, repo_dir])
         try:
             subprocess.run(cmd, check=True)
@@ -198,7 +202,12 @@ def mirror_gnu_elpa(args, api, existing_repos):
         if not subdir.is_dir():
             continue
         # Prevent monkey business.
-        if subdir.name in ("gnu-elpa-mirror", "epkgs", "emacsmirror-mirror"):
+        if subdir.name in (
+            "gnu-elpa-mirror",
+            "epkgs",
+            "emacsmirror-mirror",
+            "org-mode",
+        ):
             continue
         packages.append(subdir.name)
     log("--> clone/update mirror repositories")
@@ -370,12 +379,45 @@ def mirror_emacsmirror(args, api, existing_repos):
     )
 
 
+def mirror_orgmode(args, api, existing_repos):
+    org = api.get_organization("emacs-straight")
+    orgmode_dir = REPOS_SUBDIR / "org-mode"
+    orgmode_git_url = "https://code.orgmode.org/bzg/org-mode.git"
+    orgmode_mirror_git_url = "https://raxod502:{}@github.com/emacs-straight/emacsmirror-mirror.git".format(
+        ACCESS_TOKEN
+    )
+    log("--> clone/update Org")
+    clone_git_repo(
+        orgmode_git_url,
+        orgmode_dir,
+        shallow=True,
+        all_branches=True,
+        private_url=False,
+        mirror=True,
+    )
+    if "org-mode" not in existing_repos:
+        log("--> create org-mode repository")
+        org.create_repo(
+            "org-mode",
+            description="Mirror of org-mode from orgmode.org",
+            homepage="https://code.orgmode.org/bzg/org-mode",
+            has_issues=False,
+            has_wiki=False,
+            has_projects=False,
+            auto_init=False,
+        )
+    result = subprocess.run(["git", "push", "--mirror", orgmode_mirror_git_url])
+    if result.returncode != 0:
+        die("pushing repository failed (details omitted for security)")
+
+
 def mirror():
     parser = argparse.ArgumentParser()
     parser.add_argument("--skip-gnu-elpa", action="store_true")
     parser.add_argument("--skip-emacsmirror", action="store_true")
     parser.add_argument("--skip-mirror-pulls", action="store_true")
     parser.add_argument("--skip-mirror-pushes", action="store_true")
+    parser.add_argument("--skip-orgmode", action="store_true")
     args = parser.parse_args()
     api = github.Github(ACCESS_TOKEN)
     log("--> get list of mirror repositories")
@@ -386,6 +428,8 @@ def mirror():
         mirror_gnu_elpa(args, api, existing_repos)
     if not args.skip_emacsmirror:
         mirror_emacsmirror(args, api, existing_repos)
+    if not args.skip_orgmode:
+        mirror_orgmode(args, api, existing_repos)
     if os.environ.get("GEM_SNITCH"):
         log("--> update Dead Man's Snitch")
         resp = requests.get("https://nosnch.in/6c16713f1f")
