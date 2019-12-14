@@ -383,14 +383,14 @@ def mirror_orgmode(args, api, existing_repos):
     org = api.get_organization("emacs-straight")
     orgmode_dir = REPOS_SUBDIR / "org-mode"
     orgmode_git_url = "https://code.orgmode.org/bzg/org-mode.git"
-    orgmode_mirror_git_url = "https://raxod502:{}@github.com/emacs-straight/emacsmirror-mirror.git".format(
+    orgmode_mirror_git_url = "https://raxod502:{}@github.com/emacs-straight/org-mode.git".format(
         ACCESS_TOKEN
     )
     log("--> clone/update Org")
     clone_git_repo(
         orgmode_git_url,
         orgmode_dir,
-        shallow=True,
+        shallow=False,
         all_branches=True,
         private_url=False,
         mirror=True,
@@ -406,7 +406,10 @@ def mirror_orgmode(args, api, existing_repos):
             has_projects=False,
             auto_init=False,
         )
-    result = subprocess.run(["git", "push", "--mirror", orgmode_mirror_git_url])
+    log("--> push org-mode repository")
+    result = subprocess.run(
+        ["git", "push", "--mirror", orgmode_mirror_git_url], cwd=orgmode_dir
+    )
     if result.returncode != 0:
         die("pushing repository failed (details omitted for security)")
 
