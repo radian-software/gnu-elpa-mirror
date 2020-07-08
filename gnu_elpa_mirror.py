@@ -332,7 +332,7 @@ def mirror_emacsmirror(args, api, existing_repos):
                 m = re.fullmatch(
                     r'\[submodule "[^"]+"\]\n|'
                     r"\tpath = .+\n|"
-                    r"\turl = git@github.com:([^/]+)/([^.]+)\.git\n|"
+                    r"\turl = git@github.com:([^/]+)/(.+)\.git\n|"
                     r"\tbranch = .+\n",
                     line,
                 )
