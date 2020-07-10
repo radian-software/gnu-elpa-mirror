@@ -332,10 +332,10 @@ def mirror_emacsmirror(args, api, existing_repos):
                 m = re.fullmatch(
                     r'\[submodule "[^"]+"\]\n|'
                     r"\tpath = .+\n|"
-                    r"\turl = git@github.com:([^/]+)/(.+)\.git\n|"
                     r"\turl = git@github.com:emacsmirror/emacswiki.org.git\n|"
                     r"\turl = https://git.savannah.gnu.org/git/emacs/elpa.git\n|"
                     r"\turl = git@github.com:melpa/melpa.git\n|"
+                    r"\turl = git@github.com:([^/]+)/(.+)\.git\n|"
                     r"\tbranch = .+\n",
                     line,
                 )
@@ -357,7 +357,7 @@ def mirror_emacsmirror(args, api, existing_repos):
                 elif org is None:
                     continue
                 else:
-                    assert False, org
+                    assert False, line
     assert num_attic >= 500 and num_mirror >= 1000
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     epkgs_commit = (
