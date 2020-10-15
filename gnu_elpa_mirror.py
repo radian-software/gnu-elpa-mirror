@@ -214,14 +214,15 @@ def mirror_gnu_elpa(args, api, existing_repos):
     org = api.get_organization("emacs-straight")
     REPOS_SUBDIR.mkdir(exist_ok=True)
     for package in packages:
+        github_package = package.replace("+", "-plus")
         git_url = "https://raxod502:{}@github.com/emacs-straight/{}.git".format(
-            ACCESS_TOKEN, package
+            ACCESS_TOKEN, github_package
         )
         repo_dir = REPOS_SUBDIR / package
-        if package not in existing_repos:
+        if github_package not in existing_repos:
             log("----> create mirror repository {}".format(package))
             org.create_repo(
-                package,
+                github_package,
                 description=("Mirror of the {} package from GNU ELPA".format(package)),
                 homepage=("https://elpa.gnu.org/packages/{}.html".format(package)),
                 has_issues=False,
