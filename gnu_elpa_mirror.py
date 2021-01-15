@@ -36,7 +36,9 @@ except KeyError:
     die("please export ACCESS_TOKEN to a valid GitHub API token")
 
 
-def clone_git_repo(git_url, repo_dir, shallow, all_branches, private_url, mirror=False):
+def clone_git_repo(
+    git_url, repo_dir, shallow, all_branches, private_url, mirror=False, branch=None
+):
     if not repo_dir.is_dir():
         cmd = ["git", "clone"]
         if shallow:
@@ -47,6 +49,8 @@ def clone_git_repo(git_url, repo_dir, shallow, all_branches, private_url, mirror
             # Use --bare instead of --mirror, see
             # <https://stackoverflow.com/a/54413257/3538165>.
             cmd.append("--bare")
+        if branch:
+            cmd.extend(["--branch", branch])
         cmd.extend([git_url, repo_dir])
         try:
             subprocess.run(cmd, check=True)
@@ -146,6 +150,7 @@ def mirror_gnu_elpa(args, api, existing_repos):
         shallow=False,
         all_branches=True,
         private_url=False,
+        branch="main",
     )
     log("--> clone/update Emacs")
     clone_git_repo(
@@ -182,21 +187,9 @@ def mirror_gnu_elpa(args, api, existing_repos):
         "gnu_elpa_commit": gnu_elpa_commit,
         "emacs_commit": emacs_commit,
     }
-    log("--> install bugfix in GNU ELPA build script")
-    subprocess.run(
-        ["git", "checkout", "admin/archive-contents.el"], cwd=GNU_ELPA_SUBDIR
-    )
-    with open(GNU_ELPA_SUBDIR / "admin" / "archive-contents.el", "r+") as f:
-        contents = f.read()
-        contents = contents.replace(
-            '(cons file-pattern "")',
-            "(cons file-pattern (file-name-nondirectory file-pattern))",
-        )
-        f.seek(0)
-        f.truncate()
-        f.write(contents)
     log("--> retrieve/update GNU ELPA external packages")
-    subprocess.run(["make", "externals"], cwd=GNU_ELPA_SUBDIR, check=True)
+    subprocess.run(["make", "setup"], cwd=GNU_ELPA_SUBDIR, check=True)
+    subprocess.run(["make", "worktrees"], cwd=GNU_ELPA_SUBDIR, check=True)
     packages = []
     for subdir in sorted(GNU_ELPA_PACKAGES_SUBDIR.iterdir()):
         if not subdir.is_dir():
