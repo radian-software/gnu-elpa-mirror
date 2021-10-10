@@ -188,7 +188,7 @@ def mirror_gnu_elpa(args, api, existing_repos):
         "emacs_commit": emacs_commit,
     }
     log("--> retrieve/update GNU ELPA external packages")
-    subprocess.run(["make", "setup"], cwd=GNU_ELPA_SUBDIR, check=True)
+    subprocess.run(["make", "setup", "-f", "Makefile"], cwd=GNU_ELPA_SUBDIR, check=True)
     subprocess.run(["make", "worktrees"], cwd=GNU_ELPA_SUBDIR, check=True)
     packages = []
     for subdir in sorted(GNU_ELPA_PACKAGES_SUBDIR.iterdir()):
