@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "gnu-elpa-mirror"
+version = "0.1.0"
+description = "Bypasses terrible package management decisions."
+authors = ["Radon Rosborough <radon.neon@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+PyGithub = "^1.55"
+requests = {version = "^2.26.0", extras = ["security"]}
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

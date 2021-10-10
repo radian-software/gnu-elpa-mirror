@@ -55,11 +55,13 @@ This is also documented in the `straight.el` documentation.
 * Create a Heroku app named `gnu-elpa-mirror`.
 * Add the following buildpacks:
 
+      https://github.com/moneymeets/python-poetry-buildpack.git
       heroku/python
       https://github.com/raxod502/heroku-buildpack-emacs
 
 * Set the `ACCESS_TOKEN` config var to a GitHub personal access token
   with the `public_repo` permission.
+* Set the `DISABLE_POETRY_CREATE_RUNTIME_FILE` config var to `1`.
 * Add the [Heroku Scheduler][scheduler] addon.
 * Configure Scheduler to run the command `./cron.daily.sh` every day.
 * Set up automatic deploys when pushing to GitHub.
