@@ -387,6 +387,7 @@ def mirror_emacsmirror(args, api, existing_repos):
 
 
 def mirror_orgmode(args, api, existing_repos):
+    brief_timestamp = datetime.datetime.now().strftime("%Y-%m-%d")
     org = api.get_organization("emacs-straight")
     orgmode_dir = REPOS_SUBDIR / "org-mode"
     orgmode_git_url = "https://code.orgmode.org/bzg/org-mode.git"
@@ -421,6 +422,12 @@ def mirror_orgmode(args, api, existing_repos):
     )
     if result.returncode != 0:
         die("pushing repository failed (details omitted for security)")
+    log("----> update repo description for Org")
+    org.get_repo("org-mode").edit(
+        description="Mirror of org-mode from orgmode.org, current as of {}".format(
+            brief_timestamp,
+        )
+    )
 
 
 def mirror():
