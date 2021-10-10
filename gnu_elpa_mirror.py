@@ -162,6 +162,7 @@ def mirror_gnu_elpa(args, api, existing_repos):
     )
     log("--> check timestamp and commit hashes")
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    brief_timestamp = datetime.datetime.now().strftime("%Y-%m-%d")
     gnu_elpa_commit = (
         subprocess.run(
             ["git", "rev-parse", "HEAD"],
@@ -251,8 +252,14 @@ def mirror_gnu_elpa(args, api, existing_repos):
         for package in packages:
             log("----> push changes to package {}".format(package))
             repo_dir = REPOS_SUBDIR / package
-            subprocess.run(
-                ["git", "push", "origin", "master"], cwd=repo_dir, check=True
+            subprocess.run(["git", "push", "origin"], cwd=repo_dir, check=True)
+            log("----> update repo description for package {}".format(package))
+            github_package = package.replace("+", "-plus")
+            org.get_repo(github_package).edit(
+                description="Mirror of the {} package from GNU ELPA, current as of {}".format(
+                    package,
+                    brief_timestamp,
+                )
             )
     git_url = "https://raxod502:{}@github.com/emacs-straight/{}.git".format(
         ACCESS_TOKEN, "gnu-elpa-mirror"
