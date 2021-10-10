@@ -288,8 +288,10 @@ def mirror_emacsmirror(args, api, existing_repos):
     epkgs_dir = REPOS_SUBDIR / "epkgs"
     epkgs_git_url = "https://github.com/emacsmirror/epkgs.git"
     epkgs_mirror_dir = REPOS_SUBDIR / "emacsmirror-mirror"
-    epkgs_mirror_git_url = "https://raxod502:{}@github.com/emacs-straight/emacsmirror-mirror.git".format(
-        ACCESS_TOKEN
+    epkgs_mirror_git_url = (
+        "https://raxod502:{}@github.com/emacs-straight/emacsmirror-mirror.git".format(
+            ACCESS_TOKEN
+        )
     )
     log("--> clone/update Emacsmirror")
     clone_git_repo(
@@ -381,8 +383,10 @@ def mirror_orgmode(args, api, existing_repos):
     org = api.get_organization("emacs-straight")
     orgmode_dir = REPOS_SUBDIR / "org-mode"
     orgmode_git_url = "https://code.orgmode.org/bzg/org-mode.git"
-    orgmode_mirror_git_url = "https://raxod502:{}@github.com/emacs-straight/org-mode.git".format(
-        ACCESS_TOKEN
+    orgmode_mirror_git_url = (
+        "https://raxod502:{}@github.com/emacs-straight/org-mode.git".format(
+            ACCESS_TOKEN
+        )
     )
     log("--> clone/update Org")
     clone_git_repo(
