@@ -243,7 +243,10 @@ def mirror_gnu_elpa(args, api, existing_repos):
             if source.is_dir() and not source.is_symlink():
                 shutil.copytree(source, target)
             else:
-                shutil.copyfile(source, target, follow_symlinks=False)
+                is_relative_symlink = source.is_symlink() and str(
+                    source.resolve()
+                ).startswith(str(package_dir.resolve()))
+                shutil.copyfile(source, target, follow_symlinks=not is_relative_symlink)
         stage_and_commit(
             repo_dir, make_commit_message("Update " + package, commit_data)
         )
