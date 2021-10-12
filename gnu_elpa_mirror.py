@@ -208,6 +208,8 @@ def mirror_gnu_elpa(args, api, existing_repos):
     org = api.get_organization("emacs-straight")
     REPOS_SUBDIR.mkdir(exist_ok=True)
     for package in packages:
+        if args.mirror_only_one and package != args.mirror_only_one:
+            continue
         github_package = package.replace("+", "-plus")
         git_url = "https://raxod502:{}@github.com/emacs-straight/{}.git".format(
             ACCESS_TOKEN, github_package
@@ -232,6 +234,8 @@ def mirror_gnu_elpa(args, api, existing_repos):
         )
     log("--> update mirrored packages")
     for package in packages:
+        if args.mirror_only_one and package != args.mirror_only_one:
+            continue
         log("----> update package {}".format(package))
         package_dir = GNU_ELPA_PACKAGES_SUBDIR / package
         repo_dir = REPOS_SUBDIR / package
@@ -253,6 +257,8 @@ def mirror_gnu_elpa(args, api, existing_repos):
     if not args.skip_mirror_pushes:
         log("--> push changes to mirrored packages")
         for package in packages:
+            if args.mirror_only_one and package != args.mirror_only_one:
+                continue
             log("----> push changes to package {}".format(package))
             repo_dir = REPOS_SUBDIR / package
             subprocess.run(["git", "push", "origin"], cwd=repo_dir, check=True)
@@ -440,6 +446,7 @@ def mirror():
     parser.add_argument("--skip-mirror-pulls", action="store_true")
     parser.add_argument("--skip-mirror-pushes", action="store_true")
     parser.add_argument("--skip-orgmode", action="store_true")
+    parser.add_argument("--mirror-only-one", type=str)
     args = parser.parse_args()
     api = github.Github(ACCESS_TOKEN)
     log("--> get list of mirror repositories")
