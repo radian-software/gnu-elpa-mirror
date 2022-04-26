@@ -36,6 +36,9 @@ except KeyError:
     die("please export ACCESS_TOKEN to a valid GitHub API token")
 
 
+WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
+
+
 def clone_git_repo(
     git_url, repo_dir, shallow, all_branches, private_url, mirror=False, branch=None
 ):
@@ -459,9 +462,9 @@ def mirror():
         mirror_emacsmirror(args, api, existing_repos)
     if not args.skip_orgmode:
         mirror_orgmode(args, api, existing_repos)
-    if os.environ.get("GEM_SNITCH"):
-        log("--> update Dead Man's Snitch")
-        resp = requests.get("https://nosnch.in/6c16713f1f")
+    if WEBHOOK_URL:
+        log("--> update webhook")
+        resp = requests.get(WEBHOOK_URL)
         log(resp)
 
 
