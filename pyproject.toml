@@ -2,7 +2,7 @@
 name = "gnu-elpa-mirror"
 version = "0.1.0"
 description = "Bypasses terrible package management decisions."
-authors = ["Radon Rosborough <radon.neon@gmail.com>"]
+authors = ["Radian LLC <contact+gnu-elpa-mirror@radian.codes>"]
 
 [tool.poetry.dependencies]
 python = "^3.6"
