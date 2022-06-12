@@ -127,49 +127,57 @@ def stage_and_commit(repo_dir, message):
 # https://savannah.gnu.org/git/?group=emacs
 GNU_ELPA_GIT_URL = "https://git.savannah.gnu.org/git/emacs/elpa.git"
 EMACS_GIT_URL = "https://git.savannah.gnu.org/git/emacs.git"
+NONGNU_ELPA_GIT_URL = "https://git.savannah.gnu.org/git/emacs/nongnu.git"
 
 GNU_ELPA_SUBDIR = pathlib.Path("gnu-elpa")
 GNU_ELPA_PACKAGES_SUBDIR = GNU_ELPA_SUBDIR / "packages"
 EMACS_SUBDIR = GNU_ELPA_SUBDIR / "emacs"
+NONGNU_ELPA_SUBDIR = pathlib.Path("nongnu-elpa")
+NONGNU_ELPA_PACKAGES_SUBDIR = NONGNU_ELPA_SUBDIR / "packages"
 REPOS_SUBDIR = pathlib.Path("repos")
 
 
 def make_commit_message(message, data):
+    name = "NonGNU ELPA" if data["nongnu"] else "GNU ELPA"
     return (
         "{}\n\n"
         "Timestamp: {}\n"
-        "GNU ELPA commit: {}\n"
+        "{} commit: {}\n"
         "Emacs commit: {}".format(
-            message, data["timestamp"], data["gnu_elpa_commit"], data["emacs_commit"]
+            message, data["timestamp"], name, data["elpa_commit"], data["emacs_commit"]
         )
     )
 
 
-def mirror_gnu_elpa(args, api, existing_repos):
-    log("--> clone/update GNU ELPA")
+def mirror_gnu_elpa(args, api, existing_repos, *, nongnu=False):
+    name = "NonGNU ELPA" if nongnu else "GNU ELPA"
+    log(f"--> clone/update {name}")
+    elpa_git_url = NONGNU_ELPA_GIT_URL if nongnu else GNU_ELPA_GIT_URL
+    elpa_subdir = NONGNU_ELPA_SUBDIR if nongnu else GNU_ELPA_SUBDIR
     clone_git_repo(
-        GNU_ELPA_GIT_URL,
-        GNU_ELPA_SUBDIR,
+        elpa_git_url,
+        elpa_subdir,
         shallow=False,
         all_branches=True,
         private_url=False,
         branch="main",
     )
-    log("--> clone/update Emacs")
-    clone_git_repo(
-        EMACS_GIT_URL,
-        EMACS_SUBDIR,
-        shallow=False,
-        all_branches=False,
-        private_url=False,
-    )
+    if not nongnu:
+        log("--> clone/update Emacs")
+        clone_git_repo(
+            EMACS_GIT_URL,
+            EMACS_SUBDIR,
+            shallow=False,
+            all_branches=False,
+            private_url=False,
+        )
     log("--> check timestamp and commit hashes")
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     brief_timestamp = datetime.datetime.now().strftime("%Y-%m-%d")
-    gnu_elpa_commit = (
+    elpa_commit = (
         subprocess.run(
             ["git", "rev-parse", "HEAD"],
-            cwd=GNU_ELPA_SUBDIR,
+            cwd=elpa_subdir,
             stdout=subprocess.PIPE,
             check=True,
         )
@@ -177,19 +185,24 @@ def mirror_gnu_elpa(args, api, existing_repos):
         .strip()
     )
     emacs_commit = (
-        subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=EMACS_SUBDIR,
-            stdout=subprocess.PIPE,
-            check=True,
+        "n/a"
+        if nongnu
+        else (
+            subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=EMACS_SUBDIR,
+                stdout=subprocess.PIPE,
+                check=True,
+            )
+            .stdout.decode()
+            .strip()
         )
-        .stdout.decode()
-        .strip()
     )
     commit_data = {
         "timestamp": timestamp,
-        "gnu_elpa_commit": gnu_elpa_commit,
+        "elpa_commit": elpa_commit,
         "emacs_commit": emacs_commit,
+        "nongnu": nongnu,
     }
     log("--> retrieve/update GNU ELPA external packages")
     subprocess.run(["make", "setup", "-f", "Makefile"], cwd=GNU_ELPA_SUBDIR, check=True)
@@ -445,6 +458,7 @@ def mirror_orgmode(args, api, existing_repos):
 def mirror():
     parser = argparse.ArgumentParser()
     parser.add_argument("--skip-gnu-elpa", action="store_true")
+    parser.add_argument("--skip-nongnu-elpa", action="store_true")
     parser.add_argument("--skip-emacsmirror", action="store_true")
     parser.add_argument("--skip-mirror-pulls", action="store_true")
     parser.add_argument("--skip-mirror-pushes", action="store_true")
@@ -457,7 +471,9 @@ def mirror():
     for repo in api.get_user("emacs-straight").get_repos():
         existing_repos.append(repo.name)
     if not args.skip_gnu_elpa:
-        mirror_gnu_elpa(args, api, existing_repos)
+        mirror_gnu_elpa(args, api, existing_repos, nongnu=False)
+    if not args.skip_nongnu_elpa:
+        mirror_gnu_elpa(args, api, existing_repos, nongnu=True)
     if not args.skip_emacsmirror:
         mirror_emacsmirror(args, api, existing_repos)
     if not args.skip_orgmode:
