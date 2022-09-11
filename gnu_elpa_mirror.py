@@ -3,6 +3,7 @@
 import argparse
 import datetime
 import github
+import json
 import os
 import pathlib
 import re
@@ -191,6 +192,24 @@ def mirror_gnu_elpa(args, api, existing_repos):
         "gnu_elpa_commit": gnu_elpa_commit,
         "emacs_commit": emacs_commit,
     }
+    elpa_config = json.loads(
+        subprocess.run(
+            [
+                "emacs",
+                "-Q",
+                "--batch",
+                "-l",
+                "json",
+                "--eval",
+                """\
+(with-temp-buffer
+  (insert-file-contents "elpa-packages")
+  (princ (json-encode (read (current-buffer)))))
+""",
+            ],
+            stdout=subprocess.PIPE,
+        ).stdout.decode()
+    )
     log("--> retrieve/update GNU ELPA external packages")
     subprocess.run(["make", "setup", "-f", "Makefile"], cwd=GNU_ELPA_SUBDIR, check=True)
     subprocess.run(["make", "worktrees"], cwd=GNU_ELPA_SUBDIR, check=True)
@@ -254,6 +273,23 @@ def mirror_gnu_elpa(args, api, existing_repos):
                     source.resolve()
                 ).startswith(str(package_dir.resolve()))
                 shutil.copyfile(source, target, follow_symlinks=not is_relative_symlink)
+        # Check for custom lisp-dir and copy files to top level if needed
+        # https://github.com/radian-software/gnu-elpa-mirror/issues/7
+        if lisp_dir_name := elpa_config[package].get("lisp-dir"):
+            lisp_dir = repo_dir / lisp_dir_name
+            for source in sorted(lisp_dir.iterdir()):
+                target = repo_dir / source.name
+                if target.name == lisp_dir.name:
+                    continue
+                if source.is_dir() and not source.is_symlink():
+                    shutil.copytree(source, target)
+                else:
+                    is_relative_symlink = source.is_symlink() and str(
+                        source.resolve()
+                    ).startswith(str(package_dir.resolve()))
+                    shutil.copyfile(
+                        source, target, follow_symlinks=not is_relative_symlink
+                    )
         stage_and_commit(
             repo_dir, make_commit_message("Update " + package, commit_data)
         )
