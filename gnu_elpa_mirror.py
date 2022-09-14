@@ -286,7 +286,7 @@ def mirror_gnu_elpa(args, api, existing_repos):
                 else:
                     is_relative_symlink = source.is_symlink() and str(
                         source.resolve()
-                    ).startswith(str(package_dir.resolve()))
+                    ).startswith(str(repo_dir.resolve()))
                     shutil.copyfile(
                         source, target, follow_symlinks=not is_relative_symlink
                     )
