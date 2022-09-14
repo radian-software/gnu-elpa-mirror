@@ -5,9 +5,9 @@ description = "Bypasses terrible package management decisions."
 authors = ["Radian LLC <contact+gnu-elpa-mirror@radian.codes>"]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = ">=3.7,<4.0"
 PyGithub = "^1.55"
-requests = {version = "^2.26.0", extras = ["security"]}
+requests = "^2.28.1"
 
 [tool.poetry.dev-dependencies]
 
