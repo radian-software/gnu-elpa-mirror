@@ -208,6 +208,7 @@ def mirror_gnu_elpa(args, api, existing_repos):
 """,
             ],
             stdout=subprocess.PIPE,
+            cwd=GNU_ELPA_SUBDIR,
         ).stdout.decode()
     )
     log("--> retrieve/update GNU ELPA external packages")
@@ -290,6 +291,7 @@ def mirror_gnu_elpa(args, api, existing_repos):
                     shutil.copyfile(
                         source, target, follow_symlinks=not is_relative_symlink
                     )
+            shutil.rmtree(lisp_dir)
         stage_and_commit(
             repo_dir, make_commit_message("Update " + package, commit_data)
         )
