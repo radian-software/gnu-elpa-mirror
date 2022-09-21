@@ -276,7 +276,13 @@ def mirror_gnu_elpa(args, api, existing_repos):
                 shutil.copyfile(source, target, follow_symlinks=not is_relative_symlink)
         # Check for custom lisp-dir and copy files to top level if needed
         # https://github.com/radian-software/gnu-elpa-mirror/issues/7
-        if lisp_dir_name := elpa_config[package].get("lisp-dir"):
+        #
+        # Note the check for a list is because some of the entries in
+        # the elpa-packages datastructure are malformed, because of
+        # course they are, and json-serialize into unexpected types.
+        if isinstance(elpa_config[package], dict) and (
+            lisp_dir_name := elpa_config[package].get("lisp-dir")
+        ):
             lisp_dir = repo_dir / lisp_dir_name
             for source in sorted(lisp_dir.iterdir()):
                 target = repo_dir / source.name
