@@ -12,5 +12,13 @@ RUN poetry install
 
 COPY cron.py gnu_elpa_mirror.py /src/
 
+# For some reason site-packages is not in sys.path by default on
+# Debian, we have to add it explicitly since that's where Poetry
+# installs stuff. Obviously this is gonna break when Python is
+# upgraded but we can at least make the Docker build fail in that
+# circumstance rather than trying to do some annoying dynamic thing.
+ENV PYTHONPATH=/usr/lib/python3.9/site-packages
+RUN python3 -c 'import croniter'
+
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["./cron.py"]
