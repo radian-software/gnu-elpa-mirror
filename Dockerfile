@@ -20,5 +20,8 @@ COPY cron.py gnu_elpa_mirror.py /src/
 ENV PYTHONPATH=/usr/lib/python3.9/site-packages
 RUN python3 -c 'import croniter'
 
+# Logs, logs, logs...
+ENV PYTHONUNBUFFERED=1
+
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["./cron.py"]

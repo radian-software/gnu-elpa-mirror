@@ -19,4 +19,4 @@ for next_time in croniter.croniter(
     while datetime.datetime.now() < next_time:
         time.sleep(60)
     # Ignore errors.
-    subprocess.run(["python3", "-u", "-m", "gnu_elpa_mirror"])
+    subprocess.run(["./gnu_elpa_mirror.py"])
