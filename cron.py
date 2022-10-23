@@ -15,6 +15,7 @@ for next_time in croniter.croniter(
         # invoke (or more than one), wait until the next scheduled
         # time in that case.
         continue
+    print("cron.py: Next invocation of job is at:", next_time)
     while datetime.datetime.now() < next_time:
         time.sleep(60)
     # Ignore errors.
