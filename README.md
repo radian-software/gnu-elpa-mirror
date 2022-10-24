@@ -53,10 +53,9 @@ This is also documented in the `straight.el` documentation.
 ## Deployment
 
 * Create a Railway app named `gnu-elpa-mirror`.
-* Set the variables `TIDIER_ACCESS_TOKEN`, `TIDIER_FOR_REAL`,
-  `TIDIER_INCLUDE_REPOS`, `TIDIER_NUM_DAYS`, and `TIDIER_WEBHOOK`
-* Connect to GitHub
-* Dockerfile auto-detected build should take care of the rest
+* Set `ACCESS_TOKEN` and `WEBHOOK_URL` as a variables.
+* Connect to GitHub.
+* Dockerfile auto-detected build should take care of the rest.
 
 ### Debugging
 
