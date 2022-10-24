@@ -2,7 +2,7 @@
 
 This repository hosts a tool for maintaining a GitHub mirror of the
 [GNU ELPA][gnu-elpa] Emacs Lisp Package Archive. The service is
-deployed to Heroku and runs daily.
+deployed to Railway and runs daily.
 
 ## Why?
 
@@ -13,7 +13,7 @@ easy task. In addition to the added complexity when compared to
 source repository.
 
 These problems are all neatly avoided if the GNU ELPA build process is
-run on Heroku and the results are mirrored to GitHub, so that the
+run on Railway and the results are mirrored to GitHub, so that the
 packages can be easily run from source by anyone.
 
 Now, after I set this up, I found that it could be used to solve other
@@ -52,34 +52,18 @@ This is also documented in the `straight.el` documentation.
 
 ## Deployment
 
-* Create a Heroku app named `gnu-elpa-mirror`.
-* Add the following buildpacks:
-
-      https://github.com/moneymeets/python-poetry-buildpack.git
-      heroku/python
-      https://github.com/radian-software/heroku-buildpack-emacs
-
-* Set the `ACCESS_TOKEN` config var to a GitHub personal access token
-  with the `public_repo` permission.
-* Set the `DISABLE_POETRY_CREATE_RUNTIME_FILE` config var to `1`.
-* Add the [Heroku Scheduler][scheduler] addon.
-* Configure Scheduler to run the command `./cron.daily.sh` every day.
-* Set up automatic deploys when pushing to GitHub.
+* Create a Railway app named `gnu-elpa-mirror`.
+* Set the variables `TIDIER_ACCESS_TOKEN`, `TIDIER_FOR_REAL`,
+  `TIDIER_INCLUDE_REPOS`, `TIDIER_NUM_DAYS`, and `TIDIER_WEBHOOK`
+* Connect to GitHub
+* Dockerfile auto-detected build should take care of the rest
 
 ### Debugging
 
 Run it locally (in a virtualenv, after installing from
 `requirements.txt`):
 
-    $ python3 -m gnu_elpa_mirror
-
-Test the cron job manually:
-
-    $ heroku run ./cron.daily.sh
-
-Interactive testing:
-
-    $ heroku run bash
+    $ ./gnu_elpa_mirror.py
 
 [epkgs]: https://github.com/emacsmirror/epkgs
 [emacsmirror-mirror]: https://github.com/emacs-straight/emacsmirror-mirror
@@ -88,5 +72,4 @@ Interactive testing:
 [melpa]: https://melpa.org/#/
 [mirror-package-list]: https://github.com/emacs-straight/gnu-elpa-mirror
 [org-elpa]: https://orgmode.org/elpa.html
-[scheduler]: https://elements.heroku.com/addons/scheduler
 [straight.el]: https://github.com/raxod502/straight.el
