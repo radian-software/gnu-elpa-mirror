@@ -280,7 +280,7 @@ def mirror_gnu_elpa(args, api, existing_repos):
         # Note the check for a list is because some of the entries in
         # the elpa-packages datastructure are malformed, because of
         # course they are, and json-serialize into unexpected types.
-        if isinstance(elpa_config[package], dict) and (
+        if isinstance(elpa_config.get(package), dict) and (
             lisp_dir_name := elpa_config[package].get("lisp-dir")
         ):
             lisp_dir = repo_dir / lisp_dir_name
