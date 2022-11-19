@@ -393,9 +393,11 @@ def mirror_emacsmirror(args, api, existing_repos):
                     r"\tpath = .+\n|"
                     r"\turl = git@github.com:emacsmirror/emacswiki.org.git\n|"
                     r"\turl = https://git.savannah.gnu.org/git/emacs/elpa.git\n|"
+                    r"\turl = https://git.savannah.gnu.org/git/emacs/nongnu.git\n|"
                     r"\turl = https://code.orgmode.org/bzg/org-mode.git\n|"
                     r"\turl = git@github.com:melpa/melpa.git\n|"
                     r"\turl = git@github.com:([^/]+)/(.+)\.git\n|"
+                    r"\turl = https://github.com/([^/]+)/(.+?)(?:\.git)?\n|"
                     r"\tbranch = .+\n",
                     line,
                 )
