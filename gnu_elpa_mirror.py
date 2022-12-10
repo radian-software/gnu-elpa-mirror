@@ -389,28 +389,34 @@ def mirror_emacsmirror(args, api, existing_repos):
         with open(epkgs_dir / ".gitmodules") as gitmodules:
             for line in gitmodules:
                 m = re.fullmatch(
-                    r'\[submodule "[^"]+"\]\n|'
-                    r"\tpath = .+\n|"
-                    r"\turl = git@github.com:emacsmirror/emacswiki.org.git\n|"
-                    r"\turl = https://git.savannah.gnu.org/git/emacs/elpa.git\n|"
-                    r"\turl = https://git.savannah.gnu.org/git/emacs/nongnu.git\n|"
-                    r"\turl = https://code.orgmode.org/bzg/org-mode.git\n|"
-                    r"\turl = git@github.com:melpa/melpa.git\n|"
-                    r"\turl = git@github.com:([^/]+)/(.+)\.git\n|"
-                    r"\turl = https://github.com/([^/]+)/(.+?)(?:\.git)?\n|"
-                    r"\tbranch = .+\n",
+                    "|".join(
+                        regex + r"\n"
+                        for regex in (
+                            r'\[submodule "[^"]+"\]',
+                            r"\tpath = .+",
+                            r"\turl = https://git.savannah.gnu.org/git/emacs/elpa(?:\.git)?",
+                            r"\turl = https://git.savannah.gnu.org/git/emacs/nongnu(?:\.git)?",
+                            r"\turl = https://code.orgmode.org/bzg/org-mode(?:\.git)?",
+                            r"\turl = git@github.com:(?P<org1>[^/]+)/(?P<repo1>.+?)(?:\.git)?",
+                            r"\turl = https://github.com/(?P<org2>[^/]+)/(?P<repo2>.+?)(?:\.git)?",
+                            r"\tbranch = .+",
+                        )
+                    ),
                     line,
                 )
                 assert m, line
-                org = m.group(1)
-                name = m.group(2)
-                if org == "bsvingen":
+                org = m.group("org1") or m.group("org2")
+                name = m.group("repo1") or m.group("repo2")
+                if name == "sql-ident":
                     # Jonas made a typo and included a spurious
                     # submodule called sql-ident in addition to the
-                    # real sql-indent one. The spurious submodule has
-                    # a wrong repo URL.
+                    # real sql-indent one. Filter it out.
                     continue
-                if org == "emacsattic":
+                if org == "melpa" and name == "melpa":
+                    continue
+                elif org == "emacsmirror" and name == "emacswiki.org":
+                    continue
+                elif org == "emacsattic":
                     attic.write(name + "\n")
                     num_attic += 1
                 elif org == "emacsmirror":
