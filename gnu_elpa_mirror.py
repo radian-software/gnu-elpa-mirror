@@ -2,17 +2,20 @@
 
 import argparse
 import datetime
-import github
 import json
 import os
 import pathlib
 import re
-import requests
 import shutil
 import subprocess
 import sys
 
+import dotenv
+import github
+import requests
+
 os.chdir(os.path.dirname(__file__))
+dotenv.load_dotenv()
 
 
 def remove_prefix(prefix, string):
