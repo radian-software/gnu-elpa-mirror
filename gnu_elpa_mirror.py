@@ -43,7 +43,15 @@ except KeyError:
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
 
-def clone_git_repo(git_url, repo_dir, *, private_url, bare=False):
+def clone_git_repo(
+    git_url,
+    repo_dir,
+    *,
+    private_url,
+    bare=False,
+    exclude_patterns=[],
+    additional_refspecs=[],
+):
     # Basically reimplement --mirror ourselves because it is the most
     # elegant way to solve https://stackoverflow.com/a/54413257/3538165.
     # We previously used --bare instead, but that doesn't do anything
@@ -62,10 +70,12 @@ def clone_git_repo(git_url, repo_dir, *, private_url, bare=False):
                 "fetch",
                 "--prune",
                 "--force",
+                "--update-head-ok",
                 git_url,
                 "+refs/heads/*:refs/heads/*",
                 "+refs/tags/*:refs/tags/*",
                 "+refs/change/*:refs/change/*",
+                *additional_refspecs,
             ],
             cwd=repo_dir,
             check=True,
@@ -74,12 +84,42 @@ def clone_git_repo(git_url, repo_dir, *, private_url, bare=False):
         if private_url:
             die("cloning repository failed (details omitted for security)")
         raise
+    try:
+        result = subprocess.run(
+            ["git", "ls-remote", "--symref", git_url, "HEAD"],
+            cwd=repo_dir,
+            stdout=subprocess.PIPE,
+            check=True,
+        )
+        output = result.stdout.decode().splitlines()
+        match = re.fullmatch(
+            r"ref: (refs/heads/.+?)\s+HEAD",
+            output[0],
+        )
+        if not match:
+            die("failed to parse ls-remote output: " + "\n".join(output))
+        remote_head = match.group(1)  # type: ignore
+    except subprocess.CalledProcessError:
+        if private_url:
+            die("determining remote HEAD failed (details omitted for security)")
+        raise
     if not bare:
-        subprocess.run(["git", "checkout", "HEAD", "--force"], cwd=repo_dir, check=True)
-        subprocess.run(["git", "clean", "-ffdx"], cwd=repo_dir, check=True)
+        subprocess.run(
+            ["git", "checkout", remote_head, "--force"], cwd=repo_dir, check=True
+        )
+        subprocess.run(
+            [
+                "git",
+                "clean",
+                "-ffdx",
+                *("--exclude=" + pat for pat in exclude_patterns),
+            ],
+            cwd=repo_dir,
+            check=True,
+        )
 
 
-def push_git_repo(git_url, repo_dir):
+def push_git_repo(git_url, repo_dir, repo_obj):
     try:
         subprocess.run(
             [
@@ -97,6 +137,14 @@ def push_git_repo(git_url, repo_dir):
         )
     except subprocess.CalledProcessError:
         die("cloning repository failed (details omitted for security)")
+    branch = (
+        subprocess.run(
+            ["git", "symbolic-ref", "HEAD"], stdout=subprocess.PIPE, check=True
+        )
+        .stdout.decode()
+        .removeprefix("refs/heads/")
+    )
+    repo_obj.edit(default_branch=branch)
 
 
 def delete_contents(path):
@@ -146,10 +194,10 @@ def stage_and_commit(repo_dir, message):
 GNU_ELPA_GIT_URL = "https://git.savannah.gnu.org/git/emacs/elpa.git"
 EMACS_GIT_URL = "https://git.savannah.gnu.org/git/emacs.git"
 
-GNU_ELPA_SUBDIR = pathlib.Path("gnu-elpa")
+REPOS_SUBDIR = pathlib.Path("repos")
+GNU_ELPA_SUBDIR = REPOS_SUBDIR / "gnu-elpa"
 GNU_ELPA_PACKAGES_SUBDIR = GNU_ELPA_SUBDIR / "packages"
 EMACS_SUBDIR = GNU_ELPA_SUBDIR / "emacs"
-REPOS_SUBDIR = pathlib.Path("repos")
 
 
 def make_commit_message(message, data):
@@ -169,6 +217,16 @@ def mirror_gnu_elpa(args, api, existing_repos):
         GNU_ELPA_GIT_URL,
         GNU_ELPA_SUBDIR,
         private_url=False,
+        exclude_patterns=["/emacs"],
+        additional_refspecs=["^refs/heads/elpa-admin"],
+    )
+    subprocess.run(
+        ["git", "remote", "remove", "origin"], cwd=GNU_ELPA_SUBDIR, check=True
+    )
+    subprocess.run(
+        ["git", "remote", "add", "origin", GNU_ELPA_GIT_URL],
+        cwd=GNU_ELPA_SUBDIR,
+        check=True,
     )
     log("--> clone/update Emacs")
     clone_git_repo(
@@ -236,6 +294,7 @@ def mirror_gnu_elpa(args, api, existing_repos):
             "epkgs",
             "emacsmirror-mirror",
             "org-mode",
+            "gnu-elpa",
         ):
             continue
         packages.append(subdir.name)
@@ -322,10 +381,11 @@ def mirror_gnu_elpa(args, api, existing_repos):
             git_url = "https://raxod502:{}@github.com/emacs-straight/{}.git".format(
                 ACCESS_TOKEN, github_package
             )
-            push_git_repo(git_url, repo_dir)
+            repo_obj = org.get_repo(github_package)
+            push_git_repo(git_url, repo_dir, repo_obj)
             log("----> update repo description for package {}".format(package))
             github_package = package.replace("+", "-plus")
-            org.get_repo(github_package).edit(
+            repo_obj.edit(
                 description="Mirror of the {} package from GNU ELPA, current as of {}".format(
                     package,
                     brief_timestamp,
