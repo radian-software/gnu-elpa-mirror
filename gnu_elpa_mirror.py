@@ -93,6 +93,9 @@ def clone_git_repo(
             check=True,
         )
         output = result.stdout.decode().splitlines()
+        if not output:
+            # Probably a new/empty repository
+            return
         match = re.fullmatch(
             r"ref: (refs/heads/.+?)\s+HEAD",
             output[0],
