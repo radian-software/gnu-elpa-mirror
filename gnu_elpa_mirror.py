@@ -51,6 +51,7 @@ def clone_git_repo(
     bare=False,
     exclude_patterns=[],
     additional_refspecs=[],
+    recursive=False,
 ):
     # Basically reimplement --mirror ourselves because it is the most
     # elegant way to solve https://stackoverflow.com/a/54413257/3538165.
@@ -120,19 +121,20 @@ def clone_git_repo(
             cwd=repo_dir,
             check=True,
         )
-        subprocess.run(
-            [
-                "git",
-                "submodule",
-                "update",
-                "--init",
-                "--recursive",
-                "--checkout",
-                "--force",
-            ],
-            cwd=repo_dir,
-            check=True,
-        )
+        if recursive:
+            subprocess.run(
+                [
+                    "git",
+                    "submodule",
+                    "update",
+                    "--init",
+                    "--recursive",
+                    "--checkout",
+                    "--force",
+                ],
+                cwd=repo_dir,
+                check=True,
+            )
 
 
 def push_git_repo(git_url, repo_dir, repo_obj):
@@ -240,8 +242,11 @@ def mirror_gnu_elpa(args, api, existing_repos):
         exclude_patterns=["/emacs"],
     )
     subprocess.run(
-        ["git", "remote", "remove", "origin"], cwd=GNU_ELPA_SUBDIR, check=True
+        ["git", "remote", "remove", "origin"],
+        cwd=GNU_ELPA_SUBDIR,
+        check=False,
     )
+    shutil.rmtree(GNU_ELPA_SUBDIR / ".git" / "worktrees")
     subprocess.run(
         ["git", "remote", "add", "origin", GNU_ELPA_GIT_URL],
         cwd=GNU_ELPA_SUBDIR,
