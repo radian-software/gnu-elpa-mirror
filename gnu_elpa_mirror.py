@@ -249,7 +249,10 @@ def mirror_gnu_elpa(args, api, existing_repos):
         cwd=GNU_ELPA_SUBDIR,
         check=False,
     )
-    shutil.rmtree(GNU_ELPA_SUBDIR / ".git" / "worktrees")
+    try:
+        shutil.rmtree(GNU_ELPA_SUBDIR / ".git" / "worktrees")
+    except FileNotFoundError:
+        pass
     subprocess.run(
         ["git", "remote", "add", "origin", GNU_ELPA_GIT_URL],
         cwd=GNU_ELPA_SUBDIR,
