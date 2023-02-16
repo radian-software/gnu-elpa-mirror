@@ -107,7 +107,11 @@ def clone_git_repo(
         if private_url:
             die("determining remote HEAD failed (details omitted for security)")
         raise
-    if not bare:
+    if bare:
+        subprocess.run(
+            ["git", "symbolic-ref", "HEAD", remote_head], cwd=repo_dir, check=True
+        )
+    else:
         local_head = remote_head.removeprefix("refs/heads/")
         subprocess.run(
             ["git", "checkout", "-B", local_head, remote_head, "--force"],
