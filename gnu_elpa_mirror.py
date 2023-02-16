@@ -561,7 +561,7 @@ def mirror_orgmode(_, api, existing_repos):
     brief_timestamp = datetime.datetime.now().strftime("%Y-%m-%d")
     org = api.get_organization("emacs-straight")
     orgmode_dir = REPOS_SUBDIR / "org-mode"
-    orgmode_git_url = "https://code.orgmode.org/bzg/org-mode.git"
+    orgmode_git_url = "https://git.savannah.gnu.org/git/emacs/org-mode.git"
     orgmode_mirror_git_url = (
         "https://raxod502:{}@github.com/emacs-straight/org-mode.git".format(
             ACCESS_TOKEN
@@ -578,8 +578,8 @@ def mirror_orgmode(_, api, existing_repos):
         log("--> create org-mode repository")
         org.create_repo(
             "org-mode",
-            description="Mirror of org-mode from orgmode.org",
-            homepage="https://code.orgmode.org/bzg/org-mode",
+            description="Mirror of org-mode from Savannah",
+            homepage="https://git.savannah.gnu.org/git/emacs/org-mode.git",
             has_issues=False,
             has_wiki=False,
             has_projects=False,
@@ -590,7 +590,7 @@ def mirror_orgmode(_, api, existing_repos):
     push_git_repo(orgmode_mirror_git_url, orgmode_dir, repo_obj=repo)
     log("--> update repo description for Org")
     repo.edit(
-        description="Mirror of org-mode from orgmode.org, current as of {}".format(
+        description="Mirror of org-mode from Savannah, current as of {}".format(
             brief_timestamp,
         )
     )
