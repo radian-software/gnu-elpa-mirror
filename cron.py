@@ -8,6 +8,15 @@ import time
 
 import croniter
 
+if os.environ.get("FORCE_SINGLE_EXECUTION") == "1":
+    print("cron.py: Forcing single execution due to environment variable")
+    subprocess.run(["./gnu_elpa_mirror.py"])
+    print(
+        "cron.py: Not running again, please unset FORCE_SINGLE_EXECUTION to resume scheduling"
+    )
+    while True:
+        time.sleep(3600)
+
 # Every day at 12am UTC (or system timezone)
 for next_time in croniter.croniter(
     "0 0 * * *", datetime.datetime.now(), ret_type=datetime.datetime
