@@ -36,3 +36,7 @@ for next_time in croniter.croniter(
     if os.environ.get("CRON_FORCE_CONTAINER_RESTART") == "1":
         print("cron.py: Forcing container restart to workaround memory leak")
         sys.exit(1)
+    if os.environ.get("CRON_FORCE_CACHE_EVICTION") == "1":
+        print("cron.py: Forcing cache eviction")
+        subprocess.run(["vmtouch", "-e", "repos"])
+        print("cron.py: Cache eviction completed")
