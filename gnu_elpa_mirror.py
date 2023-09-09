@@ -382,6 +382,20 @@ def mirror_gnu_elpa(args, api, existing_repos):
                     source.resolve()
                 ).startswith(str(package_dir.resolve()))
                 shutil.copyfile(source, target, follow_symlinks=not is_relative_symlink)
+        # Remove files that may make GitHub interpret this repo
+        # specially, as it should just be a static fork with the
+        # packaging files.
+        try:
+            shutil.rmtree(repo_dir / ".github")
+        except FileNotFoundError:
+            pass
+        # Add a file to tell people not to file pull requests.
+        pr_template = repo_dir / ".github" / "PULL_REQUEST_TEMPLATE.md"
+        pr_template.parent.mkdir()
+        with open(pr_template, "w") as f:
+            f.write(
+                ":warning: This repo is a read-only mirror. Please submit changes upstream instead :warning:\n"
+            )
         # Check for custom lisp-dir and copy files to top level if needed
         # https://github.com/radian-software/gnu-elpa-mirror/issues/7
         #
