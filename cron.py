@@ -8,6 +8,11 @@ import time
 
 import croniter
 
+if os.environ.get("PREVENT_EXECUTION") == "1":
+    print("cron.py: Doing nothing forever due to environment variable")
+    while True:
+        time.sleep(3600)
+
 if os.environ.get("FORCE_SINGLE_EXECUTION") == "1":
     print("cron.py: Forcing single execution due to environment variable")
     subprocess.run(["./gnu_elpa_mirror.py"])
