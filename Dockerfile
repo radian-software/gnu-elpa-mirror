@@ -14,6 +14,7 @@ COPY gnu_elpa_mirror.py /src/
 
 # Logs, logs, logs...
 ENV PYTHONUNBUFFERED=1
+ENV GIT_ADVICE=0
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["./gnu_elpa_mirror.py"]
