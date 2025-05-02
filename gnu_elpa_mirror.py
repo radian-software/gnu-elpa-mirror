@@ -11,6 +11,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
+import traceback
 from typing import Any
 
 import dotenv
@@ -35,6 +37,19 @@ def log(message):
 def die(message):
     log("gnu_elpa_mirror: " + message)
     sys.exit(1)
+
+
+def with_retries(workload):
+    for backoff_duration_secs in (10, 10, 60, 300, 0):
+        try:
+            return workload()
+        except Exception:
+            traceback.print_exc()
+            log(f"Exponential backoff: retry after {backoff_duration_secs} seconds...")
+            if not backoff_duration_secs:
+                raise
+            time.sleep(backoff_duration_secs)
+    raise RuntimeError("can't get here")
 
 
 try:
@@ -402,12 +417,14 @@ def mirror_gnu_elpa(args, api, existing_repos):
                 ACCESS_TOKEN, github_package
             )
             repo_obj = org.get_repo(github_package)
-            push_git_repo(git_url, repo_dir, repo_obj)
+            with_retries(lambda: push_git_repo(git_url, repo_dir, repo_obj))
             log("----> update repo description for package {}".format(pkg.name))
-            repo_obj.edit(
-                description="Mirror of the {} package from GNU ELPA, current as of {}".format(
-                    pkg.name,
-                    timestamp.strftime("%Y-%m-%d"),
+            with_retries(
+                lambda: repo_obj.edit(
+                    description="Mirror of the {} package from GNU ELPA, current as of {}".format(
+                        pkg.name,
+                        timestamp.strftime("%Y-%m-%d"),
+                    )
                 )
             )
     if not args.skip_mirror_index:
@@ -553,11 +570,13 @@ def mirror_orgmode(_, api, existing_repos):
         )
     )
     log("--> clone/update Org")
-    clone_git_repo(
-        orgmode_git_url,
-        orgmode_dir,
-        private_url=False,
-        bare=True,
+    with_retries(
+        lambda: clone_git_repo(
+            orgmode_git_url,
+            orgmode_dir,
+            private_url=False,
+            bare=True,
+        )
     )
     if "org-mode" not in existing_repos:
         log("--> create org-mode repository")
