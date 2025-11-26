@@ -64,6 +64,12 @@ Run it locally (in a virtualenv, after installing from
 
     $ ./gnu_elpa_mirror.py
 
+Run it in a Docker container:
+
+    $ docker build . -f Dockerfile.dev -t gnu-elpa-mirror
+    $ ./scripts/docker-run.bash gnu-elpa-mirror bash
+    > ./gnu_elpa_mirror.py
+
 [epkgs]: https://github.com/emacsmirror/epkgs
 [emacsmirror-mirror]: https://github.com/emacs-straight/emacsmirror-mirror
 [gnu-elpa]: https://elpa.gnu.org/

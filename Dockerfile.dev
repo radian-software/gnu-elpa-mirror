@@ -1,0 +1,13 @@
+FROM silex/emacs:28.1
+
+RUN apt-get update && apt-get install -y curl git python3-pip python3-poetry python3-venv sudo tini && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m venv /venv
+ENV VIRTUAL_ENV=/venv
+ENV PATH=/venv/bin:$PATH
+
+COPY pyproject.toml poetry.lock /src/
+WORKDIR /src
+# RUN poetry install --no-root
+
+RUN rm -rf /src
