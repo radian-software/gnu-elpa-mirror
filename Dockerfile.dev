@@ -8,6 +8,8 @@ ENV PATH=/venv/bin:$PATH
 
 COPY pyproject.toml poetry.lock /src/
 WORKDIR /src
-# RUN poetry install --no-root
+RUN poetry install --no-root
+
+ENV GIT_ADVICE=0
 
 RUN rm -rf /src

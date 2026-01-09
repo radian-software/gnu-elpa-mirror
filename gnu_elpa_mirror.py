@@ -333,13 +333,14 @@ def mirror_gnu_elpa(args, api, existing_repos):
     log("--> download GNU ELPA tarballs")
     GNU_ELPA_SUBDIR.mkdir(exist_ok=True)
     existing_tarballs = set(os.listdir(GNU_ELPA_SUBDIR))
+    requests_session = requests.Session()
     for pkg in elpa_packages:
         if not package_filter(pkg.name):
             continue
         if pkg.tarball_name in existing_tarballs:
             continue
         log(f"----> download {pkg.tarball_url}")
-        resp = requests.get(pkg.tarball_url, stream=True)
+        resp = requests_session.get(pkg.tarball_url, stream=True)
         resp.raise_for_status()
         with open(GNU_ELPA_SUBDIR / pkg.tarball_name, "wb") as f:
             for chunk in resp.iter_content(10 * 1024):
@@ -502,6 +503,8 @@ def mirror_emacsmirror(_, api, existing_repos):
                         for regex in (
                             r'\[submodule "[^"]+"\]',
                             r"\tpath = .+",
+                            r"\turl = https://git.savannah.gnu.org/git/elpa/gnu(?:\.git)?",
+                            r"\turl = https://git.savannah.gnu.org/git/elpa/nongnu(?:\.git)?",
                             r"\turl = https://git.savannah.gnu.org/git/emacs/elpa(?:\.git)?",
                             r"\turl = https://git.savannah.gnu.org/git/emacs/nongnu(?:\.git)?",
                             r"\turl = https://code.orgmode.org/bzg/org-mode(?:\.git)?",
