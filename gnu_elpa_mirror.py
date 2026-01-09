@@ -61,6 +61,9 @@ except KeyError:
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
 
+git = ["git", "-c" "init.defaultBranch=main"]
+
+
 def clone_git_repo(
     git_url,
     repo_dir,
@@ -77,7 +80,7 @@ def clone_git_repo(
     # like what we actually want, and I clearly wasn't thinking very
     # hard when I wrote the original code.
     if not repo_dir.is_dir():
-        cmd = ["git", "init"]
+        cmd = [*git, "init"]
         if bare:
             cmd += ["--bare"]
         cmd += [repo_dir]
@@ -85,7 +88,7 @@ def clone_git_repo(
     try:
         subprocess.run(
             [
-                "git",
+                *git,
                 "fetch",
                 "--prune",
                 "--force",
@@ -105,7 +108,7 @@ def clone_git_repo(
         raise
     try:
         result = subprocess.run(
-            ["git", "ls-remote", "--symref", git_url, "HEAD"],
+            [*git, "ls-remote", "--symref", git_url, "HEAD"],
             cwd=repo_dir,
             stdout=subprocess.PIPE,
             check=True,
@@ -127,18 +130,18 @@ def clone_git_repo(
         raise
     if bare:
         subprocess.run(
-            ["git", "symbolic-ref", "HEAD", remote_head], cwd=repo_dir, check=True
+            [*git, "symbolic-ref", "HEAD", remote_head], cwd=repo_dir, check=True
         )
     else:
         local_head = remote_head.removeprefix("refs/heads/")
         subprocess.run(
-            ["git", "checkout", "-B", local_head, remote_head, "--force"],
+            [*git, "checkout", "-B", local_head, remote_head, "--force"],
             cwd=repo_dir,
             check=True,
         )
         subprocess.run(
             [
-                "git",
+                *git,
                 "clean",
                 "-ffdx",
                 *("--exclude=" + pat for pat in exclude_patterns),
@@ -149,7 +152,7 @@ def clone_git_repo(
         if recursive:
             subprocess.run(
                 [
-                    "git",
+                    *git,
                     "submodule",
                     "update",
                     "--init",
@@ -166,7 +169,7 @@ def push_git_repo(git_url, repo_dir, repo_obj):
     try:
         subprocess.run(
             [
-                "git",
+                *git,
                 "push",
                 "--prune",
                 "--force",
@@ -182,7 +185,7 @@ def push_git_repo(git_url, repo_dir, repo_obj):
         die("cloning repository failed (details omitted for security)")
     branch = (
         subprocess.run(
-            ["git", "symbolic-ref", "HEAD"],
+            [*git, "symbolic-ref", "HEAD"],
             stdout=subprocess.PIPE,
             check=True,
             cwd=repo_dir,
@@ -213,15 +216,15 @@ def stage_and_commit(repo_dir, message):
     # in their .gitignore. See [1].
     #
     # [1]: https://github.com/raxod502/straight.el/issues/299
-    subprocess.run(["git", "add", "--all", "--force"], cwd=repo_dir, check=True)
+    subprocess.run([*git, "add", "--all", "--force"], cwd=repo_dir, check=True)
     anything_staged = (
-        subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=repo_dir).returncode
+        subprocess.run([*git, "diff", "--cached", "--quiet"], cwd=repo_dir).returncode
         != 0
     )
     if anything_staged:
         subprocess.run(
             [
-                "git",
+                *git,
                 "-c",
                 "user.name=GNU ELPA Mirror Bot",
                 "-c",
@@ -541,7 +544,7 @@ def mirror_emacsmirror(_, api, existing_repos):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     epkgs_commit = (
         subprocess.run(
-            ["git", "rev-parse", "HEAD"],
+            [*git, "rev-parse", "HEAD"],
             cwd=epkgs_dir,
             stdout=subprocess.PIPE,
             check=True,
