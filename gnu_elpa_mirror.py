@@ -61,7 +61,7 @@ except KeyError:
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 
 
-git = ["git", "-c" "init.defaultBranch=main"]
+git = ["git", "-c", "init.defaultBranch=main"]
 
 
 def clone_git_repo(
