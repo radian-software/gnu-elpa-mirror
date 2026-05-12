@@ -1,9 +1,9 @@
-# Use the "cron" build stage if you want to bring up the container and
-# then manually run gnu_elpa_mirror on command. Use the "oneshot"
-# build stage if you have an external scheduling system and want GEM
-# to run right away inside the container.
+# Use the "onshot" (default) build stage if you want to run the
+# mirroring right away. Use the "cron" build stage if you want to have
+# the container run a built-in cron framework and schedule the
+# mirroring to happen daily.
 
-FROM silex/emacs:28.1 AS cron
+FROM silex/emacs:28.1 AS base
 
 RUN apt-get update && apt-get install -y curl git python3-pip python3-poetry python3-venv tini && rm -rf /var/lib/apt/lists/*
 
@@ -21,9 +21,11 @@ COPY gnu_elpa_mirror.py /src/
 ENV PYTHONUNBUFFERED=1
 ENV GIT_ADVICE=0
 
-CMD ["tail", "-f", "/dev/null"]
-
-FROM cron as oneshot
-
 ENTRYPOINT ["/usr/bin/tini", "--"]
+
+FROM base as cron
+COPY cron.py /src/
+CMD ["./cron.py"]
+
+FROM base as oneshot
 CMD ["./gnu_elpa_mirror.py"]
