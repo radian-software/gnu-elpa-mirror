@@ -616,7 +616,7 @@ def mirror():
     parser.add_argument("--skip-orgmode", action="store_true")
     parser.add_argument("--mirror-only-one", type=str)
     args = parser.parse_args()
-    api = github.Github(ACCESS_TOKEN)
+    api = github.Github(auth=github.Auth.Token(ACCESS_TOKEN))
     log("--> get list of mirror repositories")
     existing_repos = []
     for repo in api.get_user("emacs-straight").get_repos():
