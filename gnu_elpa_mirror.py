@@ -240,9 +240,9 @@ def stage_and_commit(repo_dir, message):
         log("(no changes)")
 
 
-THIS_DIR = Path(".").resolve()
-REPOS_SUBDIR = THIS_DIR / "repos"
-GNU_ELPA_SUBDIR = THIS_DIR / "gnu-elpa"
+DATA_DIR = Path(".").resolve() / "data"
+REPOS_SUBDIR = DATA_DIR / "repos"
+GNU_ELPA_SUBDIR = DATA_DIR / "gnu-elpa"
 
 
 @dataclass
@@ -607,6 +607,7 @@ def mirror_orgmode(_, api, existing_repos):
 
 
 def mirror():
+    DATA_DIR.mkdir(exist_ok=True)
     parser = argparse.ArgumentParser()
     parser.add_argument("--skip-gnu-elpa", action="store_true")
     parser.add_argument("--skip-emacsmirror", action="store_true")
